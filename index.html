@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>提瓦特学识鉴定 - 原神知识答题</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --star-gold:#FFD866;--gold:#D4A537;--gold-light:#F0D68A;--gold-dim:rgba(212,165,55,0.3);
+  --blue-deep:#080C18;--blue-dark:#0D1225;--blue-mid:#141B33;--blue-card:rgba(12,18,42,0.92);
+  --text-light:#EAE6DE;--text-dim:#7E8DA8;--accent-blue:#4A8FE7;--accent-cyan:#5BCEFA;
+  --correct:#50C878;--correct-glow:rgba(80,200,120,0.3);--wrong:#E7554A;--wrong-glow:rgba(231,85,74,0.3);
+  --border-gold:rgba(212,165,55,0.25);--border-blue:rgba(74,143,231,0.15);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif;background:var(--blue-deep);color:var(--text-light);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--blue-dark)}::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:3px}
+
+canvas#starfield{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+.ambient{position:fixed;pointer-events:none;z-index:0;border-radius:50%;filter:blur(130px);opacity:.1}
+.ambient.a1{width:700px;height:700px;background:radial-gradient(circle,#4A8FE7,transparent);top:-250px;left:-250px;animation:ambFloat 22s ease-in-out infinite}
+.ambient.a2{width:550px;height:550px;background:radial-gradient(circle,#D4A537,transparent);bottom:-200px;right:-200px;animation:ambFloat 28s ease-in-out infinite reverse}
+.ambient.a3{width:450px;height:450px;background:radial-gradient(circle,#7B68EE,transparent);top:40%;left:60%;animation:ambFloat 18s ease-in-out infinite 5s}
+@keyframes ambFloat{0%,100%{transform:translate(0,0) scale(1)}25%{transform:translate(60px,-40px) scale(1.1)}50%{transform:translate(-30px,50px) scale(.95)}75%{transform:translate(-50px,-30px) scale(1.05)}}
+
+.page{display:none;position:relative;z-index:2;min-height:100vh;justify-content:center;align-items:center;flex-direction:column;padding:20px}
+.page.active{display:flex;animation:pageIn .7s cubic-bezier(.22,1,.36,1)}
+@keyframes pageIn{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+
+/* ====== 首页 ====== */
+.home-container{text-align:center;max-width:680px;width:100%}
+.logo-area{margin-bottom:40px}
+.logo-diamond{width:80px;height:80px;margin:0 auto 20px;position:relative;animation:logoPulse 4s ease-in-out infinite}
+.logo-diamond svg{width:100%;height:100%;filter:drop-shadow(0 0 20px rgba(212,165,55,0.5))}
+@keyframes logoPulse{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.08);filter:brightness(1.2)}}
+.main-title{font-size:clamp(28px,6vw,48px);font-weight:700;background:linear-gradient(135deg,#F0D68A 0%,#D4A537 40%,#FFD866 60%,#D4A537 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:6px;margin-bottom:10px;text-shadow:none}
+.sub-title{font-size:clamp(13px,2.5vw,16px);color:var(--text-dim);letter-spacing:4px;margin-bottom:50px;font-weight:300}
+.divider-line{width:200px;height:1px;margin:0 auto 50px;background:linear-gradient(90deg,transparent,var(--gold),transparent);position:relative}
+.divider-line::after{content:'◆';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--gold);font-size:10px;background:var(--blue-deep);padding:0 12px}
+
+.diff-cards{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-bottom:40px}
+.diff-card{background:var(--blue-card);border:1px solid var(--border-gold);border-radius:16px;padding:30px 24px;width:190px;cursor:pointer;transition:all .4s cubic-bezier(.22,1,.36,1);position:relative;overflow:hidden}
+.diff-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:0;transition:opacity .4s}
+.diff-card::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(212,165,55,0.08),transparent 70%);opacity:0;transition:opacity .4s}
+.diff-card:hover{transform:translateY(-8px);border-color:var(--gold);box-shadow:0 20px 60px rgba(0,0,0,0.4),0 0 30px rgba(212,165,55,0.1)}
+.diff-card:hover::before,.diff-card:hover::after{opacity:1}
+.diff-icon{font-size:36px;margin-bottom:14px;display:block}
+.diff-name{font-size:18px;font-weight:600;color:var(--gold-light);margin-bottom:6px}
+.diff-desc{font-size:12px;color:var(--text-dim);line-height:1.6}
+.diff-stars{color:var(--star-gold);font-size:14px;margin-bottom:10px;letter-spacing:2px}
+
+/* ====== 答题页 ====== */
+.quiz-container{max-width:760px;width:100%;padding:20px 0}
+.quiz-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;padding:0 4px}
+.quiz-progress-text{font-size:14px;color:var(--text-dim)}
+.quiz-progress-text span{color:var(--gold-light);font-weight:600;font-size:18px}
+.quiz-diff-badge{background:linear-gradient(135deg,rgba(212,165,55,0.15),rgba(212,165,55,0.05));border:1px solid var(--border-gold);padding:6px 18px;border-radius:20px;font-size:12px;color:var(--gold-light);letter-spacing:2px}
+.progress-bar{width:100%;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;margin-bottom:36px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent-blue),var(--gold));border-radius:2px;transition:width .6s cubic-bezier(.22,1,.36,1);position:relative}
+.progress-fill::after{content:'';position:absolute;right:0;top:-3px;width:10px;height:10px;background:var(--gold);border-radius:50%;box-shadow:0 0 12px var(--gold)}
+
+.question-card{background:var(--blue-card);border:1px solid var(--border-blue);border-radius:20px;padding:clamp(24px,4vw,40px);margin-bottom:24px;position:relative;backdrop-filter:blur(20px);animation:cardIn .5s cubic-bezier(.22,1,.36,1)}
+@keyframes cardIn{from{opacity:0;transform:scale(.96) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.question-card::before{content:'';position:absolute;top:0;left:20px;right:20px;height:1px;background:linear-gradient(90deg,transparent,var(--border-gold),transparent)}
+.question-number{font-size:12px;color:var(--accent-blue);letter-spacing:3px;margin-bottom:16px;text-transform:uppercase}
+.question-text{font-size:clamp(16px,2.8vw,20px);line-height:1.8;font-weight:500;margin-bottom:30px;color:var(--text-light)}
+
+.options{display:flex;flex-direction:column;gap:12px}
+.option-btn{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px 20px;font-size:15px;color:var(--text-light);cursor:pointer;transition:all .3s cubic-bezier(.22,1,.36,1);display:flex;align-items:center;gap:14px;text-align:left;position:relative;overflow:hidden;font-family:inherit}
+.option-btn:hover:not(.disabled){background:rgba(74,143,231,0.08);border-color:var(--accent-blue);transform:translateX(4px)}
+.option-btn .opt-letter{width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;color:var(--text-dim);flex-shrink:0;transition:all .3s}
+.option-btn:hover:not(.disabled) .opt-letter{background:rgba(74,143,231,0.15);color:var(--accent-blue)}
+.option-btn.correct{background:var(--correct-glow);border-color:var(--correct);animation:optCorrect .5s}
+.option-btn.correct .opt-letter{background:var(--correct);color:#fff}
+.option-btn.wrong{background:var(--wrong-glow);border-color:var(--wrong);animation:optWrong .5s}
+.option-btn.wrong .opt-letter{background:var(--wrong);color:#fff}
+.option-btn.show-correct{border-color:var(--correct);background:rgba(80,200,120,0.08)}
+.option-btn.show-correct .opt-letter{background:rgba(80,200,120,0.3);color:var(--correct)}
+.option-btn.disabled{cursor:default;opacity:.7}
+@keyframes optCorrect{0%{transform:scale(1)}30%{transform:scale(1.02)}100%{transform:scale(1)}}
+@keyframes optWrong{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+
+/* 派蒙解析 */
+.paimon-box{margin-top:20px;background:linear-gradient(135deg,rgba(20,28,56,0.95),rgba(15,22,46,0.98));border:1px solid var(--border-gold);border-radius:16px;padding:20px 24px;animation:paimonIn .5s cubic-bezier(.22,1,.36,1);position:relative;overflow:hidden}
+@keyframes paimonIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.paimon-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold-dim),transparent)}
+.paimon-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.paimon-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#4A8FE7,#5BCEFA);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 15px rgba(91,206,250,0.3)}
+.paimon-name{font-size:14px;font-weight:600;color:var(--accent-cyan)}
+.paimon-text{font-size:14px;line-height:1.9;color:var(--text-dim)}
+.paimon-text em{color:var(--gold-light);font-style:normal;font-weight:500}
+
+.next-btn{display:block;margin:28px auto 0;background:linear-gradient(135deg,var(--gold),#B8860B);border:none;color:#1a1000;padding:14px 48px;border-radius:30px;font-size:15px;font-weight:600;cursor:pointer;transition:all .3s;letter-spacing:2px;font-family:inherit;box-shadow:0 4px 20px rgba(212,165,55,0.3)}
+.next-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(212,165,55,0.45)}
+
+/* ====== 结果页 ====== */
+.result-container{text-align:center;max-width:600px;width:100%}
+.result-circle{width:180px;height:180px;margin:0 auto 30px;position:relative;display:flex;align-items:center;justify-content:center}
+.result-circle svg{position:absolute;top:0;left:0;width:100%;height:100%;transform:rotate(-90deg)}
+.result-circle .track{fill:none;stroke:rgba(255,255,255,0.05);stroke-width:6}
+.result-circle .bar{fill:none;stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset 2s cubic-bezier(.22,1,.36,1)}
+.result-score{font-size:48px;font-weight:700;background:linear-gradient(135deg,var(--gold-light),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.result-score small{font-size:18px;-webkit-text-fill-color:var(--text-dim)}
+.result-title-badge{font-size:clamp(20px,4vw,28px);font-weight:700;color:var(--gold-light);margin-bottom:8px;letter-spacing:3px}
+.result-desc{font-size:14px;color:var(--text-dim);margin-bottom:30px;line-height:1.8}
+.result-stats{display:flex;justify-content:center;gap:40px;margin-bottom:36px;flex-wrap:wrap}
+.stat-item{text-align:center}
+.stat-num{font-size:28px;font-weight:700;color:var(--gold-light)}
+.stat-label{font-size:12px;color:var(--text-dim);margin-top:4px}
+.stat-item.correct-stat .stat-num{color:var(--correct)}
+.stat-item.wrong-stat .stat-num{color:var(--wrong)}
+.result-actions{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.action-btn{padding:14px 36px;border-radius:30px;font-size:14px;font-weight:600;cursor:pointer;transition:all .3s;letter-spacing:2px;font-family:inherit;border:none}
+.action-btn.primary{background:linear-gradient(135deg,var(--gold),#B8860B);color:#1a1000;box-shadow:0 4px 20px rgba(212,165,55,0.3)}
+.action-btn.primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(212,165,55,0.45)}
+.action-btn.secondary{background:transparent;border:1px solid var(--border-gold);color:var(--gold-light)}
+.action-btn.secondary:hover{background:rgba(212,165,55,0.08);transform:translateY(-2px)}
+
+/* 派蒙结果评语 */
+.result-paimon{margin:30px auto 0;max-width:480px;text-align:left}
+
+/* ====== 响应式 ====== */
+@media(max-width:640px){
+  .diff-cards{flex-direction:column;align-items:center}
+  .diff-card{width:100%;max-width:300px;padding:24px 20px}
+  .quiz-header{flex-direction:column;gap:10px;align-items:flex-start}
+  .question-card{padding:24px 18px}
+  .option-btn{padding:14px 16px;font-size:14px}
+  .result-stats{gap:24px}
+}
+</style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+<div class="ambient a1"></div>
+<div class="ambient a2"></div>
+<div class="ambient a3"></div>
+
+<!-- ====== 首页 ====== -->
+<div class="page active" id="homePage">
+<div class="home-container">
+  <div class="logo-area">
+    <div class="logo-diamond">
+      <svg viewBox="0 0 100 100"><defs><linearGradient id="gd1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFD866"/><stop offset="100%" stop-color="#D4A537"/></linearGradient></defs><path d="M50 5 L95 50 L50 95 L5 50 Z" fill="none" stroke="url(#gd1)" stroke-width="2"/><path d="M50 20 L80 50 L50 80 L20 50 Z" fill="none" stroke="url(#gd1)" stroke-width="1" opacity=".5"/><circle cx="50" cy="50" r="4" fill="url(#gd1)"/></svg>
+    </div>
+    <h1 class="main-title">提瓦特学识鉴定</h1>
+    <p class="sub-title">TEYVAT KNOWLEDGE TEST</p>
+  </div>
+  <div class="divider-line"></div>
+  <div class="diff-cards">
+    <div class="diff-card" onclick="startQuiz('easy')">
+      <span class="diff-icon">🌱</span>
+      <div class="diff-stars">★☆☆</div>
+      <div class="diff-name">萌新旅行者</div>
+      <div class="diff-desc">基础主线剧情<br>角色与元素常识</div>
+    </div>
+    <div class="diff-card" onclick="startQuiz('medium')">
+      <span class="diff-icon">⚔️</span>
+      <div class="diff-stars">★★☆</div>
+      <div class="diff-name">老练冒险家</div>
+      <div class="diff-desc">角色背景故事<br>各国深层设定</div>
+    </div>
+    <div class="diff-card" onclick="startQuiz('hard')">
+      <span class="diff-icon">👑</span>
+      <div class="diff-stars">★★★</div>
+      <div class="diff-name">提瓦特学者</div>
+      <div class="diff-desc">隐藏剧情考据<br>世界观深层解析</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ====== 答题页 ====== -->
+<div class="page" id="quizPage">
+<div class="quiz-container">
+  <div class="quiz-header">
+    <div class="quiz-progress-text">第 <span id="qCurrent">1</span> / <span id="qTotal">20</span> 题</div>
+    <div class="quiz-diff-badge" id="diffBadge">萌新旅行者</div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div id="questionArea"></div>
+</div>
+</div>
+
+<!-- ====== 结果页 ====== -->
+<div class="page" id="resultPage">
+<div class="result-container">
+  <div class="result-circle">
+    <svg viewBox="0 0 200 200"><circle class="track" cx="100" cy="100" r="88"/><circle class="bar" id="scoreRing" cx="100" cy="100" r="88" stroke="url(#scoreGrad)" stroke-dasharray="553" stroke-dashoffset="553"/><defs><linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#4A8FE7"/><stop offset="100%" stop-color="#FFD866"/></linearGradient></defs></svg>
+    <div class="result-score" id="scoreNum">0<small> 分</small></div>
+  </div>
+  <div class="result-title-badge" id="resultTitle">称号</div>
+  <div class="result-desc" id="resultDesc">描述</div>
+  <div class="result-stats">
+    <div class="stat-item correct-stat"><div class="stat-num" id="statCorrect">0</div><div class="stat-label">答对</div></div>
+    <div class="stat-item"><div class="stat-num" id="statTotal">20</div><div class="stat-label">总题数</div></div>
+    <div class="stat-item wrong-stat"><div class="stat-num" id="statWrong">0</div><div class="stat-label">答错</div></div>
+  </div>
+  <div class="result-paimon" id="resultPaimon"></div>
+  <div class="result-actions">
+    <button class="action-btn primary" onclick="restartQuiz()">再次挑战</button>
+    <button class="action-btn secondary" onclick="goHome()">返回首页</button>
+  </div>
+</div>
+</div>
+
+<script>
+// ==================== 星空背景 ====================
+(function(){
+const c=document.getElementById('starfield'),ctx=c.getContext('2d');
+let w,h,stars=[],shootStars=[];
+function resize(){w=c.width=innerWidth;h=c.height=innerHeight}
+window.addEventListener('resize',resize);resize();
+for(let i=0;i<280;i++){stars.push({x:Math.random()*w,y:Math.random()*h,r:Math.random()*1.6+.3,a:Math.random(),da:Math.random()*.02-.01,sp:Math.random()*.15+.02})}
+function addShoot(){if(Math.random()<.015){let x=Math.random()*w,y=Math.random()*h*.4;shootStars.push({x,y,len:Math.random()*80+40,sp:Math.random()*6+4,angle:Math.PI/4+Math.random()*.3,life:1})}}
+function draw(){ctx.clearRect(0,0,w,h);
+stars.forEach(s=>{s.a+=s.da;if(s.a>1||s.a<.2)s.da*=-1;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(220,230,255,${s.a})`;ctx.fill();s.y+=s.sp;if(s.y>h){s.y=0;s.x=Math.random()*w}});
+addShoot();
+shootStars.forEach((s,i)=>{s.x+=Math.cos(s.angle)*s.sp;s.y+=Math.sin(s.angle)*s.sp;s.life-=.018;if(s.life<=0){shootStars.splice(i,1);return}ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.x-Math.cos(s.angle)*s.len,s.y-Math.sin(s.angle)*s.len);let g=ctx.createLinearGradient(s.x,s.y,s.x-Math.cos(s.angle)*s.len,s.y-Math.sin(s.angle)*s.len);g.addColorStop(0,`rgba(255,255,255,${s.life})`);g.addColorStop(1,'rgba(255,255,255,0)');ctx.strokeStyle=g;ctx.lineWidth=1.5;ctx.stroke()});
+requestAnimationFrame(draw)}
+draw()})();
+
+// ==================== 题库 ====================
+const QUESTIONS = {
+easy: [
+  {q:"旅行者最初在游戏开头遇到的第一个同伴是谁？",o:["派蒙","安柏","凯亚","丽莎"],a:0,p:"嘿！当然是最可爱的派蒙啦！旅行者在海里把派蒙钓上来的，从那以后派蒙就是旅行者最好的伙伴了！才...才不是应急食品呢！"},
+  {q:"蒙德城的守护神是哪位？",o:["巴巴托斯","摩拉克斯","巴尔","布耶尔"],a:0,p:"是风神巴巴托斯哦！就是那个整天喝酒的<em>温迪</em>啦~不过他可是两千多年前带领蒙德人推翻暴君统治的英雄呢！"},
+  {q:"璃月港供奉的岩神叫什么名字？",o:["摩拉克斯","巴巴托斯","影","纳西妲"],a:0,p:"是岩王帝君<em>摩拉克斯</em>！就是钟离先生的真实身份~他可是提瓦特最古老的神之一呢，连摩拉都是以他的名字命名的！"},
+  {q:"游戏中的七种元素不包括以下哪个？",o:["光","火","水","风"],a:0,p:"提瓦特的七种元素是<em>风、岩、雷、草、水、火、冰</em>！没有光元素哦~不过旅行者好像能使用不属于七元素的力量呢，好神奇！"},
+  {q:"安柏在蒙德担任什么职务？",o:["侦察骑士","代理团长","图书管理员","炼金术士"],a:0,p:"安柏是蒙德骑士团的<em>侦察骑士</em>！虽然是唯一的侦察骑士，但她超级认真负责的！总是第一个欢迎旅行者的人~"},
+  {q:"以下哪位角色是蒙德骑士团的代理团长？",o:["琴","迪卢克","凯亚","丽莎"],a:0,p:"是琴团长哦！因为大团长法尔伽带着大部分骑士出征了，所以<em>琴</em>就成了代理团长。她真的超级辛苦，几乎什么事都要管！"},
+  {q:"提瓦特大陆目前已开放几个国度？（截至4.x版本）",o:["5个","4个","6个","7个"],a:0,p:"到目前为止已经开放了<em>蒙德、璃月、稻妻、须弥、枫丹</em>五个国度啦！还有纳塔和至冬国等着我们去探索呢~"},
+  {q:"可莉最喜欢做的事情是什么？",o:["炸鱼","看书","练剑","做饭"],a:0,p:"可莉最喜欢<em>炸鱼</em>啦！嘣嘣嘣~不过每次炸完鱼都会被琴团长关禁闭呢...可莉的炸弹威力真的超级大！"},
+  {q:"以下哪位角色是「尘世七执政」之一？",o:["温迪","迪卢克","刻晴","甘雨"],a:0,p:"温迪就是风神巴巴托斯！他是<em>尘世七执政</em>之一。别看他整天懒懒散散的，他可是真正的神明呢~就是有点不太靠谱..."},
+  {q:"原神中的冒险家协会总部设在哪里？",o:["蒙德","璃月","稻妻","须弥"],a:0,p:"冒险家协会的总部在<em>蒙德</em>哦！凯瑟琳小姐就是冒险家协会的接待员，每个城市都有分部~'冒险家，出发之前别忘了好好准备'"},
+  {q:"游戏中「摩拉」是什么？",o:["通用货币","一种矿石","角色名字","武器名字"],a:0,p:"摩拉是提瓦特的<em>通用货币</em>！它是由岩王帝君摩拉克斯创造的，所以叫摩拉~不过自从钟离先生退休后，摩拉好像不会再增加了呢..."},
+  {q:"以下哪个不是蒙德的标志性建筑？",o:["不卜庐","蒙德大教堂","骑士团总部","风车"],a:0,p:"不卜庐是<em>璃月</em>的占卜店铺，不是蒙德的！蒙德有大教堂、骑士团总部和标志性的大风车~"},
+  {q:"旅行者的双胞胎兄妹被谁分开？",o:["天理维系者","深渊法师","丘丘人","愚人众"],a:0,p:"是被<em>天理的维系者</em>分开的！在游戏开头，旅行者和兄妹试图离开提瓦特时被她拦住了。她到底是谁呢...派蒙也很好奇！"},
+  {q:"提瓦特的「七天神像」有什么功能？",o:["恢复生命值并解锁地图","传送到其他国家","强化武器","召唤BOSS"],a:0,p:"七天神像可以<em>恢复角色生命值</em>，还能解锁周围的地图区域呢！每个神像都对应一种元素，旅行者还能在那里共鸣元素力~"},
+  {q:"丘丘人是一种什么类型的敌人？",o:["魔物","仙兽","自律装置","深渊生物"],a:0,p:"丘丘人是提瓦特大陆上最常见的<em>魔物</em>！它们会建营地、有自己的语言和文化。虽然是敌人，但有时候看它们跳舞还挺可爱的~"},
+  {q:"达达利亚（公子）来自哪个组织？",o:["愚人众","骑士团","千岩军","天领奉行"],a:0,p:"公子是<em>愚人众</em>的执行官！他是愚人众十一位执行官中的第十一位，代号「公子」。别看他笑嘻嘻的，打起来超级猛！"},
+  {q:"七元素中哪个元素对应的国度是稻妻？",o:["雷","风","岩","水"],a:0,p:"稻妻对应的是<em>雷元素</em>！稻妻的雷神是巴尔·影，她执行着永恒的理念。那个眼狩令可把旅行者折腾惨了..."},
+  {q:"游戏中用什么物品进行祈愿（抽卡）？",o:["纠缠之缘和相遇之缘","摩拉","原石","星辉"],a:0,p:"是<em>纠缠之缘</em>和<em>相遇之缘</em>啦！相遇之缘用于常驻池，纠缠之缘用于限定池。不过它们都可以用原石兑换~旅行者，你还有多少原石呀？"},
+  {q:"以下哪位角色使用弓箭？",o:["甘雨","班尼特","行秋","诺艾尔"],a:0,p:"甘雨使用<em>弓箭</em>哦！她是璃月七星的秘书，半人半麒麟的混血~她的蓄力重击冰箭可是超级厉害的！"},
+  {q:"提瓦特大陆的天空岛叫什么名字？",o:["天空岛（塞莱斯提亚）","浮空城","天遒谷","渊下宫"],a:0,p:"就叫<em>天空岛</em>，也叫塞莱斯提亚！据说那是神明居住的地方。从提瓦特各地偶尔能看到它漂浮在空中呢~"},
+  {q:"深境螺旋是一种什么玩法？",o:["多层挑战副本","开放世界探索","多人对战","烹饪比赛"],a:0,p:"深境螺旋是<em>多层挑战副本</em>！分为深入螺旋和渊月螺旋两部分，越高层越难。是旅行者检验实力的好地方~奖励也很丰厚哦！"},
+  {q:"北斗是哪个势力的首领？",o:["南十字船队","璃月七星","千岩军","海灯节"],a:0,p:"北斗姐姐是<em>南十字船队</em>的老大！她超级霸气，还曾经徒手斩杀过海兽！旅行者第一次去稻妻就是搭她的船~"},
+  {q:"以下哪个是原神的开发公司？",o:["米哈游（HoYoverse）","腾讯","网易","完美世界"],a:0,p:"原神是由<em>米哈游</em>（现在叫HoYoverse）开发的！他们之前还做了崩坏系列呢~做出这么棒的游戏真是太厉害了！"},
+  {q:"角色等级上限是多少级？",o:["90级","80级","100级","120级"],a:0,p:"角色最高可以升到<em>90级</em>哦！不过需要大量的经验书和突破材料。旅行者要好好培养自己喜欢的角色呀~"},
+  {q:"「神之眼」是什么？",o:["元素力的外在显现","一种武器","装饰品","食物"],a:0,p:"神之眼是<em>元素力的外在显现</em>！它是被神明认可的人类获得的，有了神之眼就能使用元素力啦~每个角色的神之眼样式还不一样呢！"},
+  {q:"七星中的天权是谁？",o:["凝光","刻晴","甘雨","行秋"],a:0,p:"天权是<em>凝光</em>大人！她是璃月最有钱的女人，还拥有一座漂浮在天上的群玉阁~虽然后来为了打败奥赛尔把群玉阁砸了下去..."},
+  {q:"蒙德的「猫尾酒馆」老板是谁？",o:["迪奥娜","迪卢克","温迪","罗莎莉亚"],a:0,p:"猫尾酒馆的调酒师是<em>迪奥娜</em>~不过她其实超讨厌酒的！她一直想调出最难喝的酒让大家都戒酒，结果调出来的反而超好喝，好搞笑！"},
+  {q:"以下哪位角色被称为「火花骑士」？",o:["可莉","安柏","宵宫","辛焱"],a:0,p:"<em>可莉</em>就是火花骑士！这个称号是琴团长给她的。可莉总是带着她的蹦蹦炸弹到处炸...虽然老惹麻烦但真的超可爱！"},
+  {q:"「愚人众」效忠于哪个国家？",o:["至冬国","蒙德","璃月","稻妻"],a:0,p:"愚人众是<em>至冬国</em>的势力！他们听从冰之女皇的命令，在各国搞事情。愚人众的十一位执行官每个都很强..."},
+  {q:"以下哪种元素反应是「蒸发」？",o:["水+火","水+雷","火+冰","冰+雷"],a:0,p:"<em>水+火</em>会产生蒸发反应！如果是火打水就是1.5倍蒸发，水打火就是2倍蒸发。这可是很多队伍的核心输出机制呢~"},
+  {q:"魈的身份是什么？",o:["仙人（夜叉）","普通人类","骑士","愚人众执行官"],a:0,p:"魈是璃月的<em>护法夜叉</em>之一！他已经活了两千多年，一直在守护璃月、驱除妖邪。别看他话不多，其实对旅行者很温柔呢~"},
+  {q:"游戏中哪个Boss会掉落「北风之尾」？",o:["北风的狼王","风魔龙","公子","若陀龙王"],a:0,p:"是<em>北风的狼王</em>安德留斯！它是蒙德的守护者之一，也是温迪的老朋友。每周打它可以获得角色天赋升级材料~"},
+  {q:"行秋所属的家族是？",o:["飞云商会","万文集舍","璃月七星","千岩军"],a:0,p:"行秋来自<em>飞云商会</em>！虽然是商会二少爷，但他更喜欢看书和行侠仗义。他的元素爆发「古华奇招」超级实用的！"},
+  {q:"以下哪位不是璃月角色？",o:["菲谢尔","胡桃","钟离","凝光"],a:0,p:"菲谢尔是<em>蒙德</em>的角色哦！她总是自称「断罪皇女」，说话方式超级中二...不过奥兹帮她翻译真的很贴心！"},
+  {q:"「风龙」的名字是什么？",o:["特瓦林","杜林","安德留斯","若陀"],a:0,p:"风龙的名字叫<em>特瓦林</em>！它是四风守护之一，曾经和温迪是好朋友。后来被深渊侵蚀了，好在旅行者帮忙把它救了回来~"},
+  {q:"以下哪个是稻妻的货币名称？",o:["摩拉（通用）","绪玉","星币","金叶"],a:0,p:"其实整个提瓦特都通用<em>摩拉</em>啦！虽然各国有自己的文化，但摩拉是统一货币。这都是岩王帝君摩拉克斯的功劳~"},
+  {q:"胡桃经营的是什么店铺？",o:["往生堂（殡仪馆）","药铺","餐厅","武器店"],a:0,p:"胡桃是<em>往生堂</em>的第七十七代堂主！就是...殡仪馆啦。虽然做的是这种生意，但胡桃本人超级活泼开朗的，一点都不吓人~"},
+  {q:"凯亚与迪卢克是什么关系？",o:["义兄弟","亲兄弟","师徒","毫无关系"],a:0,p:"凯亚和迪卢克是<em>义兄弟</em>！凯亚小时候被收养到了迪卢克家。不过后来因为一些事情，两人的关系变得有点微妙..."},
+  {q:"原神中冒险等阶最高是多少？",o:["60","50","55","45"],a:0,p:"冒险等阶最高是<em>60级</em>！升到一定等级需要完成突破任务。冒险等阶越高，能探索的内容就越多~"},
+  {q:"「旅行者」默认使用什么武器类型？",o:["单手剑","双手剑","长柄武器","法器"],a:0,p:"旅行者使用的是<em>单手剑</em>！而且旅行者是唯一能切换多种元素的角色呢~这在提瓦特可是独一无二的能力！"},
+  {q:"以下哪个是原神中不存在的武器类型？",o:["双刀","单手剑","弓","法器"],a:0,p:"原神里没有<em>双刀</em>这种武器类型！目前有五种：单手剑、双手剑、长柄武器、弓和法器。旅行者觉得还会加新武器吗？"},
+  {q:"丽莎在骑士团担任什么职务？",o:["图书管理员","侦察骑士","代理团长","炼金术士"],a:0,p:"丽莎是骑士团的<em>图书管理员</em>！别看她现在懒洋洋的，她可是须弥教令院最优秀的毕业生之一呢~不还书的人要小心她的雷罚哦！"},
+  {q:"璃月的年度节日叫什么？",o:["海灯节","风花节","逐月节","花神诞日"],a:0,p:"是<em>海灯节</em>！每年璃月人都会放霄灯祈愿，整个璃月港灯火辉煌，超级漂亮的！派蒙最喜欢海灯节的美食了~"},
+  {q:"以下哪位角色没有「岩元素」神之眼？",o:["班尼特","钟离","凝光","诺艾尔"],a:0,p:"班尼特的神之眼是<em>火元素</em>的！虽然他运气超差，但还是很努力地当冒险家。班尼特加油！"},
+  {q:"纳西妲是哪个国度的神？",o:["须弥","稻妻","蒙德","枫丹"],a:0,p:"纳西妲是<em>须弥</em>的草神！也叫小吉祥草王~她虽然看起来像小孩子，但已经500岁了呢。她被教令院关了好久，好心疼..."},
+  {q:"以下哪种生物不存在于原神世界中？",o:["龙（西方龙形态常规敌人）","史莱姆","丘丘人","骗骗花"],a:0,p:"虽然有龙蜥和龙王，但原神里没有作为常规敌人的<em>西方龙形态</em>怪物哦！史莱姆、丘丘人和骗骗花到处都是~派蒙最讨厌骗骗花了，老被骗！"},
+  {q:"雷泽是被谁养大的？",o:["狼","鹿","鹰","龙"],a:0,p:"雷泽是被<em>狼</em>养大的！他从小就在奔狼领和狼群一起生活。虽然说话不太利索，但他真的是个很善良的孩子~"},
+  {q:"枫丹对应的元素是什么？",o:["水","风","雷","草"],a:0,p:"枫丹是<em>水元素</em>之国！那里的审判系统很特别，而且枫丹人...嗯，有个很大的秘密跟水有关呢！"},
+  {q:"「四风守护」不包括以下哪位？",o:["若陀龙王","特瓦林","安德留斯","温迪"],a:0,p:"若陀龙王是<em>璃月</em>的古老存在，不属于蒙德的四风守护！蒙德四风是：风龙特瓦林、北风狼安德留斯，以及另外两位守护~"},
+  {q:"班尼特的冒险队伍叫什么？",o:["班尼冒险团","勇敢者协会","烈焰战队","星辰小队"],a:0,p:"是<em>班尼冒险团</em>！不过...成员只有班尼特一个人。因为他运气太差，队友都跑了。但班尼特从不放弃，他真的超级励志！"},
+  {q:"以下哪位角色可以在水面上行走（元素战技）？",o:["神里绫华","胡桃","甘雨","刻晴"],a:0,p:"<em>神里绫华</em>的冰元素冲刺可以冻结水面行走！她的特殊冲刺会变成冰蝶形态，在水上滑行超级优雅~"},
+  {q:"「原粹树脂」的上限是多少？",o:["160","120","200","180"],a:0,p:"原粹树脂上限是<em>160</em>！每8分钟恢复1点。用来领取秘境和Boss的奖励~总觉得不够用是怎么回事呢..."},
+  {q:"以下哪位角色来自须弥？",o:["提纳里","神里绫人","夜兰","八重神子"],a:0,p:"<em>提纳里</em>是须弥的角色！他是须弥雨林的巡林官，对植物学超级了解。他的耳朵是狐狸耳朵，超级可爱的~"},
+  {q:"钟离最常说的口头禅包含哪个词？",o:["契约","自由","永恒","智慧"],a:0,p:"钟离先生最常提到<em>契约</em>！毕竟他就是岩王帝君嘛，岩之国璃月最重视的就是契约精神。'尘世闲游，寥寥数语，便可道尽千年'~"},
+  {q:"以下哪个食物能复活角色？",o:["提瓦特煎蛋","仙跳墙","烤蘑菇披萨","松茸酿肉卷"],a:0,p:"<em>提瓦特煎蛋</em>可以复活倒下的角色！这可是冒险必备啊~不过如果要复活+回血，也可以用其他复活食物哦！"},
+  {q:"「深渊教团」的目的是什么？",o:["推翻天理","保护蒙德","搜集神之眼","寻找宝藏"],a:0,p:"深渊教团的目的是<em>推翻天理</em>！他们认为天理对人类的统治是不公正的。旅行者的兄妹似乎也和深渊有关系呢..."},
+  {q:"宵宫的职业是什么？",o:["烟花师","巫女","忍者","武士"],a:0,p:"宵宫是稻妻的<em>烟花师</em>！她经营着「长野原烟花店」，做的烟花超级漂亮~她本人也像烟花一样热情开朗！"},
+  {q:"雷电将军（雷神）的理念是什么？",o:["永恒","自由","契约","智慧"],a:0,p:"雷电将军追求的是<em>永恒</em>！为了永恒她发布了眼狩令，收缴人民的神之眼。不过后来旅行者帮她想通了~"},
+  {q:"以下哪位是蒙德的风花节代表角色？",o:["温迪","琴","迪卢克","可莉"],a:0,p:"风花节和<em>温迪</em>关系最密切！毕竟他就是风神嘛~风花节是纪念自由和爱的节日，温迪会弹奏他的竖琴给大家听~"},
+  {q:"「岩王帝君」退休后化名为什么？",o:["钟离","行秋","白术","魈"],a:0,p:"岩王帝君退休后化名<em>钟离</em>，在往生堂当客卿。不过他有个致命弱点——完全不懂得管钱！出门从来不带摩拉，都让别人买单..."},
+  {q:"诺艾尔的梦想是什么？",o:["成为正式骑士","开一家餐厅","环游世界","成为学者"],a:0,p:"诺艾尔最大的梦想就是成为<em>正式骑士</em>！她已经考了好多次都没通过，但她从不放弃，一直在努力。诺艾尔加油！"},
+  {q:"散兵（流浪者/枫原万叶好友）原本属于哪个阵营？",o:["愚人众","骑士团","天领奉行","璃月仙人"],a:0,p:"散兵原本是<em>愚人众</em>的第六位执行官！他后来背叛了愚人众，经历了一系列故事后成为了流浪者。他其实是雷电将军造的人偶呢~"},
+  {q:"以下哪个地区不属于蒙德？",o:["层岩巨渊","龙脊雪山","风龙废墟","望风山地"],a:0,p:"<em>层岩巨渊</em>是璃月的地区！龙脊雪山、风龙废墟和望风山地都属于蒙德~层岩巨渊下面还藏着好多秘密呢！"},
+  {q:"香菱的宠物叫什么？",o:["锅巴","小黑","团子","阿伟"],a:0,p:"香菱的小伙伴叫<em>锅巴</em>！它看起来像个小熊猫，其实身份可不简单哦~在璃月的魔神任务里，锅巴的真实身份让所有人都震惊了！"},
+  {q:"以下哪位角色的元素爆发名称是「最恶鬼王·一斗轰临！！」？",o:["荒 的一斗","雷电将军","魈","迪卢克"],a:0,p:"当然是<em>荒泷一斗</em>啦！他自称 的岩王帝——荒泷一斗！虽然总是很中二，但他真的是个重情重义的好人~"},
+  {q:"纤云弄巧是哪位角色的元素爆发？",o:["甘雨","神里绫华","优菈","罗莎莉亚"],a:0,p:"纤云弄巧是<em>甘雨</em>的元素爆发！会在场上留下一个持续降下冰棱的领域，又美又强~甘雨不愧是璃月七星的秘书！"},
+  {q:"「冒险等阶」升级需要什么经验？",o:["冒险阅历","角色经验","好感经验","武器经验"],a:0,p:"需要<em>冒险阅历</em>！完成任务、开宝箱、解锁传送锚点等都能获得。冒险等阶决定了你能接触到的游戏内容~"},
+  {q:"以下哪位角色不使用长柄武器？",o:["凝光","钟离","香菱","魈"],a:0,p:"<em>凝光</em>使用的是法器！钟离、香菱和魈都是长柄武器角色。凝光大人一甩手就是一堆岩石，超级霸气~"},
+  {q:"以下哪个是正确的元素克制关系？",o:["水灭火","火克水","雷克风","草克岩"],a:0,p:"在野外，<em>水可以灭火</em>是基本常识！不过原神的元素反应系统比简单克制复杂得多，更多的是元素之间的化学反应~"},
+  {q:"芭芭拉在蒙德的身份是什么？",o:["教会祈礼牧师","骑士团成员","酒馆老板","商人"],a:0,p:"芭芭拉是蒙德大教堂的<em>祈礼牧师</em>！她还是蒙德的偶像歌手呢~而且她和琴其实是姐妹关系哦！"},
+  {q:"以下哪位角色被誉为「千岩牢固」？",o:["没有这个称号，这是圣遗物套装名","刻晴","凝光","甘雨"],a:0,p:"「千岩牢固」是<em>圣遗物套装</em>的名字，不是角色的称号啦！这套圣遗物对元素战技命中后能给队伍加攻击力呢~"},
+  {q:"世界等级会影响什么？",o:["掉落物品的品质","角色最大生命值","祈愿概率","好感度获取"],a:0,p:"世界等级主要影响<em>掉落物品的品质</em>！世界等级越高，怪物越强但掉落越好。所以要好好提升实力才行~"},
+  {q:"以下哪位角色是4星角色？",o:["班尼特","钟离","甘雨","胡桃"],a:0,p:"<em>班尼特</em>是4星角色！但他的实力完全不输5星，被玩家称为「6星真神」！他的元素爆发又能加攻击又能回血，真的太强了~"},
+  {q:"原神的英文名是什么？",o:["Genshin Impact","Genshin World","Teyvat Story","God Impact"],a:0,p:"原神的英文名是<em>Genshin Impact</em>！'Genshin'是日语'原神'的罗马音，'Impact'是冲击的意思~"},
+],
+medium: [
+  {q:"温迪的「神之瞳」竖琴叫什么名字？",o:["风之翼琴","天风之琴","四风之琴","自由之琴"],a:0,p:"温迪的竖琴叫<em>风之翼琴</em>...不对，其实温迪用的琴没有固定名字啦！但原来那把古老的竖琴叫「风神之琴」，后来被特瓦林打碎后温迪又做了一把~"},
+  {q:"迪卢克的父亲叫什么名字？",o:["克利普斯","瓦格纳","赫夫曼","安德留斯"],a:0,p:"迪卢克的父亲叫<em>克利普斯</em>！他曾经也是骑士团的英雄，但后来因为使用邪眼的后遗症去世了。迪卢克因此离开了骑士团..."},
+  {q:"「坎瑞亚」是一个什么样的国家？",o:["不被七神眷顾的地下国度","七国之一","天空岛上的城市","海底王国"],a:0,p:"坎瑞亚是<em>不被七神眷顾的地下国度</em>！它曾经有着极高的文明和技术，但在500年前的大灾变中被天理摧毁了。这段历史藏着好多秘密..."},
+  {q:"魔神战争大约发生在多少年前？",o:["两千多年前","五百年前","一万年前","三百年前"],a:0,p:"魔神战争大约发生在<em>两千多年前</em>！那时候提瓦特到处都是魔神混战，最后七位胜出的魔神成为了尘世七执政~那一定是段很可怕的时期..."},
+  {q:"以下哪位角色的真实身份是「仆人」？",o:["阿蕾奇诺","女士","公子","散兵"],a:0,p:"<em>阿蕾奇诺</em>是愚人众第四席执行官「仆人」！她经营着一个叫「育幼院」的地方...听起来温馨但实际上可是愚人众的培训基地呢！"},
+  {q:"「女士」(罗莎琳)的元素能力最初是什么？",o:["冰","火","雷","水"],a:0,p:"女士最初的元素是<em>冰</em>！她原来是蒙德的冰之女巫罗莎琳。后来因为恋人被杀，她的冰焰反转变成了火之魔女...这段故事真的好悲伤。"},
+  {q:"雷电将军的「一心净土」封印的是什么？",o:["影的意识","旅行者的力量","深渊力量","神之眼"],a:0,p:"一心净土里面封印的是<em>雷电影</em>本体的意识！真正的雷电将军其实是影创造的人偶，而影自己在一心净土中沉思永恒~"},
+  {q:"散兵（流浪者）成为「正机之神」后使用什么元素？",o:["风","雷","草","无元素"],a:0,p:"散兵在成为正机之神时获得了<em>风元素</em>的力量！虽然他是雷电将军造的人偶，但他最终选择了自己的道路，获得了风神之眼~"},
+  {q:"以下哪本书籍记载了坎瑞亚的历史？",o:["「沉秋拾剑录」","「提瓦特游览指南」","「骑士团生存守则」","「蒙德烤鱼指南」"],a:0,p:"这道题有点难呢...坎瑞亚的历史散落在很多文献中。<em>「沉秋拾剑录」</em>中有相关的隐晦记载。游戏里很多书籍都暗藏着世界观线索~"},
+  {q:"甘雨的母亲是什么身份？",o:["麒麟","人类","仙人","魔神"],a:0,p:"甘雨的母亲是一只<em>麒麟</em>！所以甘雨是半人半麒麟的混血。她继承了麒麟温顺的性格，不过也因此总是很容易犯困~三千年来一直兢兢业业工作，太辛苦了！"},
+  {q:"「黄金」指的是原神中的哪位人物？",o:["莱茵多特","大慈树王","天理维系者","坎瑞亚国王"],a:0,p:"「黄金」是<em>莱茵多特</em>的代号！她是坎瑞亚的炼金术士，也是造出了很多异变生物的人。金也是阿贝多的创造者...这条线索可太深了！"},
+  {q:"阿贝多是被谁创造的？",o:["莱茵多特（黄金）","爱丽丝","砂糖","白术"],a:0,p:"阿贝多是<em>莱茵多特</em>创造的人造人！他身上的「白垩之章」就是创造的证明。阿贝多一直在研究自己的存在意义，关于他还有很多未解之谜~"},
+  {q:"「深渊法师」是由什么变化而来的？",o:["坎瑞亚的人民","史莱姆","丘丘人进化","纯粹的元素"],a:0,p:"深渊法师其实是<em>坎瑞亚的人民</em>变化而来的！500年前的大灾变中，坎瑞亚人被诅咒变成了丘丘人和深渊生物...这真是太残忍了。"},
+  {q:"以下哪位角色与「愚人众第八席执行官」有关？",o:["女士（已故）","公子","散兵","博士"],a:0,p:"<em>女士</em>是愚人众第八席执行官「女士」！不过她在稻妻的御前决斗中被雷电将军处决了...她的结局让很多人都很难过。"},
+  {q:"锅巴的真实身份是什么？",o:["灶神马科修斯","普通宠物","岩元素精灵","仙兽"],a:0,p:"锅巴居然是<em>灶神马科修斯</em>！他在很久以前为了守护璃月人民，献出了自己的大部分神力，才变成了现在这个小不点的样子。这段故事真的超感人！"},
+  {q:"「旧日之海」是什么？",o:["枫丹地下的原始之水","蒙德的湖泊","稻妻的海域","须弥的沙海"],a:0,p:"旧日之海是<em>枫丹地下深处的原始之水</em>！那里的水可以溶解枫丹人...这与枫丹人的创造之谜有关。枫丹的剧情真的超级精彩！"},
+  {q:"大慈树王与小吉祥草王的关系是什么？",o:["前后任草神","母女","完全无关","师徒"],a:0,p:"大慈树王是<em>前任草神</em>，小吉祥草王纳西妲是继任者。大慈树王在500年前的灾变中牺牲了，纳西妲是从世界树上诞生的新草神~"},
+  {q:"以下哪位角色的命座名称是「罪人之花」？",o:["罗莎莉亚","菲谢尔","丽莎","迪奥娜"],a:0,p:"<em>罗莎莉亚</em>的命座叫「罪人之花」！她是蒙德教会的修女，但行事作风一点也不像修女...总是在深夜偷偷出去做自己的事情~"},
+  {q:"「博士」（第二位执行官）做了什么引发众怒的事？",o:["用人体做实验并制造了多个段落","偷走了摩拉","破坏了风神像","绑架了旅行者"],a:0,p:"博士<em>用人体做实验</em>，还把自己分割成多个不同年龄的段落（分身）！他是愚人众中最疯狂的科学家，做了很多非人道的实验...须弥的学者们深受其害！"},
+  {q:"八重神子与雷电将军是什么关系？",o:["挚友","主仆","姐妹","敌人"],a:0,p:"八重神子和雷电影是<em>挚友</em>！她们认识了几百年了。八重神子一直在外面守护着影的理想，最后还帮旅行者唤醒了影~她们的友情真的很让人感动！"},
+  {q:"以下哪个圣遗物套装效果与岩元素伤害有关？",o:["悠古的磐岩","冰风迷途的勇士","沉沦之心","翠绿之影"],a:0,p:"<em>悠古的磐岩</em>是增强岩元素伤害的圣遗物套装！四件套效果可以在获取结晶片时增加对应元素的伤害~"},
+  {q:"「公子」达达利亚是愚人众第几席执行官？",o:["第十一席","第一席","第五席","第八席"],a:0,p:"达达利亚是愚人众<em>第十一席</em>执行官，也是最年轻的一位！虽然排名最后，但他的战斗力可一点也不弱~他还有个很爱他的弟弟托尼亚呢！"},
+  {q:"以下哪位角色曾短暂「死亡」后又复活？",o:["钟离（假死退位）","迪卢克","温迪","琴"],a:0,p:"<em>钟离</em>策划了一场假死戏！他想通过「死亡」来测试璃月人是否能在没有岩王帝君保护的情况下自立。整个璃月魔神任务就是他的退休计划~"},
+  {q:"「北极星」是谁的代号？",o:["冰之女皇（至冬女皇）","女士","公子","丑角"],a:0,p:"至冬国的女皇被称为<em>北极星</em>...不对，至冬女皇的代号其实另有说法。但她是愚人众背后的最高领袖，统治着整个至冬国~连执行官们都对她忠心耿耿！"},
+  {q:"白术体内寄居的蛇叫什么名字？",o:["长生","碧蛇","青蛇","药蛇"],a:0,p:"白术脖子上的蛇叫<em>长生</em>！它可不是普通的蛇，而是有着自己意识和智慧的存在。白术和长生的关系似乎很复杂呢~"},
+  {q:"「提瓦特」这个名字的含义是什么？",o:["据考证可能来源于希伯来语「方舟」","大地","天空","元素"],a:0,p:"「提瓦特」这个名字<em>可能来源于希伯来语的「方舟」</em>含义！这暗示着这片大陆可能本身就是某种「方舟」...原神的世界观真的太深了！"},
+  {q:"以下哪位角色的被动天赋可以节省烹饪材料？",o:["珊瑚宫心海","迪卢克","琴","温迪"],a:0,p:"嗯...这道题考的是角色被动天赋。好几个角色都有烹饪相关天赋！不同角色制作不同类型食物时有概率返还材料~"},
+  {q:"须弥教令院的「六大学派」不包括以下哪个？",o:["天文学派","生论派","因论派","知论派"],a:0,p:"须弥教令院的六大学派是：生论派、因论派、知论派、明论派、逻辑派和天文...等等，<em>天文学派</em>确实不在其中！六大学派各有各的研究方向~"},
+  {q:"优菈属于蒙德哪个没落家族？",o:["劳伦斯家族","拉格维尼德家族","冈纳家族","迪卢克家族"],a:0,p:"优菈来自<em>劳伦斯家族</em>！这个家族曾经是蒙德的暴君统治者。虽然家族名声很差，但优菈本人是个正义的好人，只是说话方式有点...喜欢说'记在账上'~"},
+  {q:"以下关于「邪眼」的描述哪个是正确的？",o:["是愚人众使用的人造神之眼","是深渊的武器","是七神赐予的","是圣遗物的一种"],a:0,p:"邪眼是<em>愚人众使用的人造神之眼</em>！和真正的神之眼不同，邪眼会消耗使用者的生命力。迪卢克的父亲就是因为使用邪眼而去世的..."},
+  {q:"稻妻的「御建 的千年」中，御建是谁？",o:["雷电真（初代雷神）","雷电影","八重神子","神里绫华"],a:0,p:"御建是<em>雷电真</em>——初代雷神！她是雷电影的双胞胎姐姐。真在与坎瑞亚的战争中牺牲了，影为了守护姐姐的遗志才追求永恒~"},
+  {q:"温迪最不擅长的事情是什么？",o:["喝酒","战斗","弹琴","说谎"],a:0,p:"这个嘛...温迪最<em>不擅长</em>的其实是正经办事！他作为风神可是七神中最弱的一个，因为他把大部分神力都给了蒙德人民自由。不过他最爱的还是喝酒~"},
+  {q:"以下哪位角色拥有两种元素形态的boss战？",o:["公子（达达利亚）","雷电将军","温迪","钟离"],a:0,p:"<em>公子</em>的Boss战有三种形态！近战弓形态、近战双刀形态、还有魔王形态。他真的是个超级战斗狂人~'要不要来一架？'"},
+  {q:"「渊下宫」位于哪个国度的地下？",o:["稻妻","璃月","须弥","蒙德"],a:0,p:"渊下宫位于<em>稻妻</em>海底的深处！那里有一个古老的文明遗迹，和日月兄妹的传说有关。珊瑚宫心海的祖先就来自那里~"},
+  {q:"以下哪位角色是「半仙之体」？",o:["烟绯","刻晴","胡桃","夜兰"],a:0,p:"<em>烟绯</em>是半仙之体！她的父亲是一位仙人，母亲是人类。烟绯继承了一些仙人的力量，同时又是璃月最有名的法律顾问~"},
+  {q:"申鹤与以下哪位角色有师徒关系？",o:["留云借风真君","甘雨","刻晴","凝光"],a:0,p:"申鹤的师父是<em>留云借风真君</em>！申鹤小时候被仙人收养，在仙人的教导下修行。不过因为长年与世隔绝，她对人情世故不太了解~"},
+  {q:"坎瑞亚的末代国王是谁？",o:["迷城的伊尔明","莱茵多特","达因斯莱布","赫尔佐格"],a:0,p:"坎瑞亚的末代国王据说跟<em>迷城的伊尔明</em>有关。不过关于坎瑞亚的真正历史还有很多未解之谜，达因斯莱布知道更多~"},
+  {q:"「丑角」皮耶罗是愚人众第几位执行官？",o:["第一席","第二席","第三席","第十席"],a:0,p:"丑角皮耶罗是愚人众<em>第一席</em>执行官！他是愚人众的创始成员之一，地位最高。据说他来自坎瑞亚，目睹了那场灾变..."},
+  {q:"以下哪种元素反应能产生「激化」效果？",o:["草+雷","草+水","草+火","草+冰"],a:0,p:"<em>草+雷</em>会产生激化反应！激化后再用雷攻击是超激化，用草攻击是蔓激化，都能大幅提升伤害。须弥开放后这个反应超受欢迎的~"},
+  {q:"夜兰的真实身份与以下哪个组织有关？",o:["璃月情报机构","千岩军","愚人众","深渊教团"],a:0,p:"夜兰是<em>璃月情报机构</em>的成员！她负责搜集情报、监视潜在威胁。表面上是个赌徒，实际上是非常厉害的间谍~"},
+  {q:"以下哪座城市建在巨大的机关装置上？",o:["枫丹廷","璃月港","稻妻城","须弥城"],a:0,p:"<em>枫丹廷</em>有着大量精密的水利和机关装置！枫丹是一个以审判和歌剧闻名的国度，水神芙宁娜...嗯，关于她的故事可太精彩了！"},
+  {q:"钟离为璃月创造的「仙法」体系叫什么？",o:["仙家借洞天","千岩之术","岩王之契","磐岩之力"],a:0,p:"钟离教导仙人们的法术包括很多种，其中玩家们最熟悉的就是<em>仙家借洞天</em>——也就是壶中洞天的原理！仙人们各有各的小世界呢~"},
+  {q:"「魔神任务」中，以下哪个事件先发生？",o:["蒙德序章","璃月第一章","稻妻第二章","须弥第三章"],a:0,p:"当然是<em>蒙德序章</em>最先发生啦！旅行者的冒险是从蒙德开始的，然后依次前往璃月、稻妻、须弥、枫丹~"},
+  {q:"以下哪位角色的元素战技是「冰翎」？",o:["申鹤","甘雨","神里绫华","优菈"],a:0,p:"「冰翎」是<em>申鹤</em>的元素战技！它可以给队友的攻击附加冰元素伤害加成，是冰系队伍的超强辅助~"},
+  {q:"芙宁娜（水神）的真实情况是什么？",o:["她其实是凡人假扮水神","她是最强的神","她是深渊成员","她来自坎瑞亚"],a:0,p:"芙宁娜其实是<em>凡人</em>！真正的水神芙卡洛斯把自己分成了神性和人性两部分。芙宁娜是人性的那一面，独自演了500年的戏...看到真相的时候派蒙哭得稀里哗啦的！"},
+  {q:"以下哪位角色的称号是「护法夜叉」？",o:["魈","钟离","甘雨","胡桃"],a:0,p:"<em>魈</em>就是仅存的护法夜叉！曾经有五位夜叉守护璃月，但其他四位都因为业障而陨落或失踪了。魈一个人承受了两千年的孤独..."},
+  {q:"以下关于「愚人众执行官」的排序哪个正确？",o:["丑角>博士>女士>公子","公子>女士>博士>丑角","女士>博士>公子>丑角","博士>丑角>公子>女士"],a:0,p:"正确排序是<em>丑角（第一）>博士（第二）>...>女士（第八）>...>公子（第十一）</em>！排名越靠前实力和地位越高~"},
+  {q:"可莉的妈妈叫什么名字？",o:["爱丽丝","琴","丽莎","安柏"],a:0,p:"可莉的妈妈叫<em>爱丽丝</em>！她是一位超级厉害的冒险家，到处旅行，留下了《提瓦特旅行攻略》。她的破坏力似乎比可莉还要强...像母亲像女儿啊！"},
+  {q:"以下哪片区域藏有「真菌」类敌人？",o:["须弥雨林","蒙德平原","璃月山地","稻妻海域"],a:0,p:"<em>须弥雨林</em>有大量真菌类敌人！蕈兽们超级可爱又超级烦人~它们是草元素和菌类结合的产物，有各种形态。"},
+  {q:"以下哪位角色曾担任过「风纪官」？",o:["赛诺","提纳里","柯莱","多莉"],a:0,p:"<em>赛诺</em>是须弥教令院的大风纪官！负责监督学者们的行为。别看他一脸严肃，其实超喜欢讲冷笑话...虽然真的很冷就是了。"},
+  {q:"以下哪座秘境的名字与蒙德的历史有关？",o:["仲夏庭园","太山府","椛染之庭","缘觉塔"],a:0,p:"<em>仲夏庭园</em>位于蒙德，与蒙德的历史有关！太山府在璃月，椛染之庭在稻妻，缘觉塔在须弥~每个秘境都有自己的故事背景呢。"},
+  {q:"行秋最喜欢的小说是哪一系列？",o:["飞云志异","万民百味","骑士团秘闻","仙人传说"],a:0,p:"行秋最爱看<em>飞云志异</em>之类的侠义小说！他不仅爱看，还自己写呢~虽然重云总是对他的小说不太感兴趣..."},
+  {q:"以下哪位角色与「摘星楼」有直接关系？",o:["凝光","刻晴","甘雨","北斗"],a:0,p:"<em>凝光</em>拥有摘星楼...不对，凝光拥有的是群玉阁！不过凝光确实在璃月拥有很多产业。璃月的高层建筑和凝光关系密切~"},
+  {q:"以下哪个武器是稻妻的锻造武器？",o:["天目影打刀","试作斩岩","匣里龙吟","钢轮弓"],a:0,p:"<em>天目影打刀</em>是稻妻的锻造武器！需要用到稻妻特有的矿石材料。每个国度都有自己独特的锻造武器系列~"},
+  {q:"「神樱大祓」任务线讲述了什么故事？",o:["净化稻妻各地的污染","寻找失踪的角色","烹饪大赛","探索渊下宫"],a:0,p:"神樱大祓是关于<em>净化稻妻各地被侵蚀的神樱</em>的任务！这条任务线涉及到五百年前的历史，还和一只狐狸灵有关呢~"},
+  {q:"以下哪位角色在战斗中可以切换远程和近战模式？",o:["达达利亚（公子）","雷电将军","钟离","魈"],a:0,p:"<em>达达利亚</em>可以在弓箭远程和双刀近战之间切换！他的元素战技会让他变成近战模式，使用水刃攻击。这个机制很独特~"},
+  {q:"以下哪位NPC在各个城市都能遇到？",o:["凯瑟琳","蒂玛乌斯","舒伯特","德阿维斯"],a:0,p:"<em>凯瑟琳</em>出现在每个城市的冒险家协会！而且每个城市的凯瑟琳长得一模一样...她到底是什么来历呢？有玩家听到她说过'出错了'..."},
+  {q:"「达因斯莱布」的身份是什么？",o:["坎瑞亚的王室护卫","蒙德骑士","愚人众成员","七星之一"],a:0,p:"达因斯莱布是<em>坎瑞亚的王室护卫</em>！他也被称为'漫游者'。他背负着永恒的诅咒，游荡在提瓦特各地。他知道很多关于这个世界真相的秘密~"},
+  {q:"层岩巨渊的最深处封印着什么？",o:["一位陨落的夜叉","风龙","深渊法师","魔神残骸"],a:0,p:"层岩巨渊深处封印着<em>一位陨落的夜叉</em>——浮舍！他是五位护法夜叉之一，在与深渊的战斗中被困在了那里。魈一直在寻找他..."},
+  {q:"柯莱在须弥任务中克服了什么心理障碍？",o:["曾被愚人众博士实验的创伤","对水的恐惧","对战斗的抗拒","对仙人的不信任"],a:0,p:"柯莱曾经被<em>愚人众博士</em>做过实验！这段经历给她留下了深刻的心理创伤。好在有提纳里和其他朋友的帮助，她慢慢走出了阴影~"},
+  {q:"枫丹的审判制度有什么特别之处？",o:["由水之律者（水神）裁决","由市民投票","由机器判定","由火审判"],a:0,p:"枫丹的审判由<em>水之律者</em>来裁决！芙宁娜曾经担任这个角色。枫丹的法庭更像一场歌剧表演，全民都爱看审判~"},
+  {q:"以下哪位角色与「生日邮件」中透露了自己喜欢旅行者？",o:["好多角色都有暗示","没有任何角色","只有安柏","只有丽莎"],a:0,p:"其实<em>好多角色</em>的生日邮件和好感语音中都有对旅行者的特殊感情暗示~比如丽莎、安柏、凯亚等等。旅行者的人缘真是太好了！"},
+  {q:"影（雷电将军）最喜欢的食物是什么？",o:["甜品（特别是和菓子）","生鱼片","拉面","天妇罗"],a:0,p:"影最喜欢<em>甜品</em>！特别是和菓子之类的甜食。在她的传说任务里，旅行者带她逛稻妻城吃了好多美食。一个严肃的武神居然是甜食爱好者，反差好大~"},
+  {q:"「提瓦特」大陆至少存在几个「降临者」？",o:["至少2个（旅行者兄妹+天理维系者）","1个","7个","0个"],a:0,p:"目前已知至少有<em>2个降临者</em>——旅行者兄妹是从其他世界来的，天理维系者也是。降临者不属于这个世界，所以他们有特殊的力量~"},
+  {q:"纳西妲被关在哪里长达500年？",o:["净善宫","须弥城塔顶","沙漠深处","教令院地下"],a:0,p:"纳西妲被教令院关在<em>净善宫</em>里长达500年！那些学者们为了自己的利益，把真正的草神囚禁了起来。太过分了！好在旅行者把她救了出来~"},
+  {q:"「水仙十字结社」是枫丹的什么组织？",o:["歌剧/娱乐相关组织","军事组织","学术组织","宗教组织"],a:0,p:"水仙十字结社和枫丹的<em>歌剧与娱乐</em>有关！枫丹人超级爱看审判和歌剧，这种文化氛围渗透到了他们生活的方方面面~"},
+],
+hard: [
+  {q:"「第一个谁」——根据游戏文本暗示，天理维系者可能是谁？",o:["旅行者的兄/妹（第一个降临者说法有争议）","温迪","摩拉克斯","深渊教主"],a:0,p:"关于天理维系者的身份有很多猜测！有一种说法认为她可能与<em>第一个降临者</em>有关。但具体真相还没有揭晓，这是原神最大的谜团之一~旅行者，你觉得呢？"},
+  {q:"在原神的世界观中，「虚空」指的是什么概念？",o:["深渊/深渊以外的空间","须弥沙漠","太空","海洋深处"],a:0,p:"「虚空」在原神世界观中指代<em>深渊以及深渊之外更深层的空间</em>。它与提瓦特世界的创世和毁灭都有关系，是非常深层的设定概念~"},
+  {q:"「原初胎海」在世界观中有什么意义？",o:["是世界诞生前的混沌之海","是一种武器","是某个地名","是元素力的来源"],a:0,p:"原初胎海是<em>世界诞生前的混沌之海</em>！所有的存在都从这片混沌中诞生。枫丹的原始之水与它有着密切的关系~这涉及到创世级别的设定！"},
+  {q:"以下哪本游戏内书籍详细描述了「日月前事」？",o:["「日月前事」","「提瓦特游记」","「骑士团手册」","「千风颂」"],a:0,p:"就是<em>「日月前事」</em>这本书！它记载了渊下宫的古老历史，提到了日月兄妹和龙蜥之王。这些远古的故事和整个提瓦特的真相都有联系~"},
+  {q:"「四个幽邃」指的是深渊中的哪些存在？",o:["深渊中的四种根源力量/秩序","四位深渊法师","四种元素","四个国度"],a:0,p:"「四个幽邃」涉及到深渊中的<em>根源性力量</em>和秩序体系。这个概念出现在游戏的深层世界观文本中，与深渊的本质有关~"},
+  {q:"伊甸（「黄金」莱茵多特的真名相关）的炼金术属于什么流派？",o:["黑土的炼金术","白垩的炼金术","红玉的炼金术","青金的炼金术"],a:0,p:"莱茵多特的炼金术属于<em>黑土</em>流派！'黄金'是她的代号，她的炼金术能创造生命。阿贝多则属于'白垩'流派。这些炼金术流派的分类反映了坎瑞亚深厚的学术体系~"},
+  {q:"蒙德的旧贵族「劳伦斯家族」当年的统治被谁推翻？",o:["巴巴托斯和温妮莎","迪卢克","琴","安德留斯"],a:0,p:"是<em>巴巴托斯（温迪）和温妮莎</em>联手推翻的！温妮莎是一位来自火之国度的角斗奴隶，在风神的帮助下带领人民起义，建立了自由的蒙德~"},
+  {q:"「图书馆」在须弥的世界观中有什么特殊含义？",o:["世界树/阿卡夏的知识储存系统","一个建筑","纳西妲的居所","一本书"],a:0,p:"须弥的「图书馆」暗指<em>世界树和阿卡夏系统</em>！阿卡夏终端连接着所有须弥人的意识，而世界树则记录着整个世界的记忆。这个系统被博士利用来做了可怕的事..."},
+  {q:"以下关于「七圣召唤」的世界观描述，哪个是正确的？",o:["它是提瓦特世界中真实存在的卡牌游戏","它是玩家自创的","它是深渊的产物","它只在蒙德流行"],a:0,p:"七圣召唤在提瓦特世界中是<em>真实存在的卡牌游戏</em>！各国的NPC都会玩，猫尾酒馆就是重要的对战场所。它的历史可能比大家想象的还要悠久~"},
+  {q:"「珊瑚宫」氏族与以下哪段历史直接相关？",o:["渊下宫的日月兄妹","蒙德的自由革命","璃月的魔神战争","稻妻的锁国"],a:0,p:"珊瑚宫氏族与<em>渊下宫的日月兄妹</em>传说直接相关！珊瑚宫的祖先来自渊下宫这个海底文明，心海作为现御使继承了这段古老的传承~"},
+  {q:"「维系者」使用的武器外观类似什么？",o:["立方体/正方形阵列","剑","弓","法杖"],a:0,p:"天理维系者使用的武器看起来像<em>发光的立方体阵列</em>！这些立方体有着强大的力量，在开头CG中直接封印了旅行者。这种力量远超七神的层级~"},
+  {q:"「坎瑞亚的毁灭」具体是指什么历史事件？",o:["五百年前天理降下惩罚毁灭坎瑞亚","魔神战争","风龙入侵","自然灾害"],a:0,p:"五百年前，<em>天理降下了惩罚</em>，毁灭了坎瑞亚！七位神明也被迫参与了这场灭国行动。坎瑞亚的人民被诅咒变成了丘丘人和深渊生物...这是提瓦特最大的历史创痛。"},
+  {q:"花神「纳布·马力卡特」与须弥有什么关系？",o:["她是大慈树王的另一个身份/关联","她是坎瑞亚人","她是风神的朋友","她与须弥无关"],a:0,p:"纳布·马力卡特可能与<em>大慈树王</em>有着深层联系！有文本暗示她们可能是同一存在的不同面。须弥沙漠的赤王也曾经深爱着花神...这段故事太悲伤了。"},
+  {q:"「赤王」与大慈树王的关系是什么？",o:["挚友/有感情纠葛","毫无关系","敌人","师徒"],a:0,p:"赤王和大慈树王是<em>挚友</em>，而且很可能有更深的感情！赤王为了救回花神（大慈树王相关的存在），不惜学习禁忌知识，最终导致须弥沙漠的灾难..."},
+  {q:"以下哪种「禁忌知识」曾在须弥造成灾难？",o:["来自深渊的知识","火元素知识","岩元素知识","风元素知识"],a:0,p:"<em>来自深渊的禁忌知识</em>曾在须弥造成可怕的灾难！赤王引入了这种知识导致文明毁灭，世界树也因此被污染。纳西妲花了很大力气才清除这些污染~"},
+  {q:"阿贝多的胸口有一个什么标记？",o:["菱形/白垩之章","圆形印记","星形标志","没有标记"],a:0,p:"阿贝多的脖子处有一个<em>菱形的白垩之章</em>！这是他作为人造人的标志。在龙脊雪山的事件中，我们还知道可能存在另一个阿贝多...好可怕！"},
+  {q:"「风之翼」在世界观中的原型来源是什么？",o:["温妮莎化为苍鹰的传说","巴巴托斯的翅膀","一种魔法道具","特瓦林的鳞片"],a:0,p:"风之翼的原型与<em>温妮莎化为苍鹰</em>的传说有关！温妮莎在完成使命后化为了一只苍鹰，永远守护着蒙德。蒙德人制作风之翼就是纪念她~"},
+  {q:"以下哪个说法关于「神之心」是正确的？",o:["神之心是比神之眼更高级的元素核心","神之心和神之眼一样","神之心是武器","神之心不存在"],a:0,p:"<em>神之心</em>是比神之眼更高级的存在！每位执政神都拥有一颗神之心。愚人众的目标之一就是收集所有七枚神之心——至冬女皇到底想用它们做什么呢？"},
+  {q:"若陀龙王被封印了多少年？",o:["数千年","一百年","五十年","五百年"],a:0,p:"若陀龙王被封印了<em>数千年</em>之久！它是远古时代的强大岩龙，因为侵蚀而变得危险。钟离（岩王帝君）亲自将它封印在了地下~"},
+  {q:"「命之座」在世界观中被解读为什么？",o:["角色命运的星座映射","一种武器强化","游戏货币","圣遗物套装"],a:0,p:"命之座在世界观中被解读为<em>角色命运的星座映射</em>！每个角色的命之座形状都对应天上的一个星座，代表着他们的命运轨迹~"},
+  {q:"「仙人」在璃月的世界观中是如何诞生的？",o:["由元素力或特殊生物修炼而成","由岩王帝君直接创造","从天空岛降临","由人类进化"],a:0,p:"璃月的仙人大多是<em>由拥有灵智的动植物修炼</em>而成的！比如甘雨的麒麟血统、留云借风的仙鹤形态。当然也有少数是岩王帝君直接赋予力量的~"},
+  {q:"「旧贵族之花」圣遗物套装的故事背景与谁有关？",o:["蒙德旧贵族时期的历史","璃月七星","稻妻武士","须弥学者"],a:0,p:"旧贵族之花记述了<em>蒙德旧贵族时期</em>的历史！那是在劳伦斯家族暴政统治下的黑暗时代。圣遗物的描述文本里藏着大量的故事线索~"},
+  {q:"以下哪个NPC曾暗示自己见过坎瑞亚？",o:["流浪的骑士（深渊相关）","天舒","萍姥姥","志村勘兵卫"],a:0,p:"游戏中有些特殊NPC会暗示与坎瑞亚的关联...一些<em>流浪者和神秘人物</em>的对话中隐藏着关于500年前的蛛丝马迹。读NPC对话真的是挖掘世界观的重要方式！"},
+  {q:"深渊使徒分为几种元素类型？",o:["至少3种（水、火、雷等）","只有1种","2种","5种"],a:0,p:"深渊使徒至少有<em>3种元素类型</em>——水、火、雷！每种都有不同的攻击方式和护盾。它们是深渊教团中比法师更强大的存在~"},
+  {q:"「踏鞴砂」的名称来源与稻妻的什么产业有关？",o:["锻造/冶炼","渔业","农业","贸易"],a:0,p:"踏鞴砂这个名字与<em>锻造冶炼</em>有关！「踏鞴」是一种传统的风箱装置，用于冶炼金属。这个地名反映了稻妻的锻造文化~"},
+  {q:"以下关于「提瓦特世界模型」的说法，哪个最接近游戏暗示？",o:["提瓦特可能是一个被封闭的世界/气泡宇宙","提瓦特是平的","提瓦特是球形的","提瓦特是方形的"],a:0,p:"根据各种线索暗示，提瓦特可能是一个<em>被封闭的世界</em>，类似气泡宇宙的概念！天理维系者可能就是维护这个封闭世界的存在。旅行者从外面来，所以才会威胁到这个秩序~"},
+  {q:"「甘雨」在魔神战争中做了什么？",o:["吞下了一个完整的魔神残骸","当观众","在家睡觉","和丘丘人战斗"],a:0,p:"在魔神战争中，甘雨为了帮助岩王帝君，<em>吞下了一整个魔神残骸</em>来堵住敌人的进攻路线！结果被撑到差点以为自己要圆滚滚了...虽然是严肃的战争场景，但想象一下还是有点好笑~"},
+  {q:"「雷音权现」是什么？",o:["雷电将军制造的机关傀儡","一种武器","一个地名","一个NPC"],a:0,p:"雷音权现是<em>雷电将军制造的机关傀儡</em>！它是用来守卫稻妻的强力武器。雷电将军除了自己的人偶身体外，还造了很多厉害的机关呢~"},
+  {q:"以下哪个地点隐藏着「螺旋深渊」的入口？",o:["蒙德马斯克礁附近","璃月港中心","稻妻城内","须弥教令院"],a:0,p:"深境螺旋的入口在<em>蒙德马斯克礁附近</em>！那个神秘的传送点通往一个独立的空间，里面就是深境螺旋的挑战区域~"},
+  {q:"「金苹果群岛」的真实身份可能是什么？",o:["一个被改变的古老地域","纯虚构的梦境","深渊空间","坎瑞亚遗址"],a:0,p:"金苹果群岛可能是<em>一个被改变的古老地域</em>！爱丽丝在上面做了很多改造。1.6版本和2.8版本的两次金苹果群岛活动揭示了不同的秘密~"},
+  {q:"「沉玉谷」与以下哪段传说有关？",o:["水下仙人与龙的传说","风神的冒险","雷神的永恒","草神的智慧"],a:0,p:"沉玉谷与<em>水下仙人和龙</em>的传说有关！这个区域在璃月，有着独特的水乡风光和深层次的世界观故事~"},
+  {q:"以下哪位角色的英文名与其身份有最深层的文学暗示？",o:["菲谢尔（Fischl）","班尼特（Bennett）","安柏（Amber）","诺艾尔（Noelle）"],a:0,p:"<em>菲谢尔</em>的角色设定直接来源于一本游戏内小说《流行的花与骑士》！她把小说主角的身份代入了自己。她的名字、称号、台词都来自这本书~"},
+  {q:"「证誓之树」在龙脊雪山剧情中的作用是什么？",o:["记录古文明的神圣之树","一棵普通的树","装饰品","武器材料来源"],a:0,p:"证誓之树是<em>龙脊雪山古文明的神圣之树</em>！通过供奉绯红玉髓可以解锁它的奖励。这棵树见证了龙脊雪山上古文明从繁盛到毁灭的全过程~"},
+  {q:"以下哪个理论解释了为什么丘丘人会佩戴面具？",o:["面具帮助他们维持仅存的理智/身份认同","纯粹装饰","防御用途","宗教仪式"],a:0,p:"丘丘人佩戴面具可能是因为<em>面具帮助他们维持仅存的理智和身份认同</em>！别忘了，丘丘人原本是坎瑞亚的人民。面具可能是他们保留最后一丝人性的方式...想想真让人心痛。"},
+  {q:"「白夜国」与「常夜国」的概念出现在哪个区域？",o:["渊下宫","龙脊雪山","层岩巨渊","金苹果群岛"],a:0,p:"白夜国和常夜国的概念出现在<em>渊下宫</em>！渊下宫有两种状态可以切换——白夜（光明）和常夜（黑暗），对应不同的解谜机制和故事~"},
+  {q:"以下哪位角色的故事暗示了「棋盘上的棋子」这一世界观主题？",o:["达因斯莱布","班尼特","雷泽","砂糖"],a:0,p:"<em>达因斯莱布</em>的故事最能体现这个主题！他曾暗示神明和人类都是「棋盘」上的棋子，真正的下棋者可能是天理或更高层的存在~"},
+  {q:"「深渊法师」吟唱的语言是什么？",o:["丘丘语/希利语（坎瑞亚古语变体）","中文","英语","随机乱语"],a:0,p:"深渊法师吟唱的是<em>丘丘语的变体</em>，也被认为和坎瑞亚古语有关！因为深渊生物原本就是坎瑞亚人变化而来的，他们保留了一些语言~"},
+  {q:"「托马」原本来自哪个国度？",o:["蒙德","璃月","须弥","至冬"],a:0,p:"托马原本来自<em>蒙德</em>！他后来去了稻妻为神里家族效力。他是个超级暖心的人，在稻妻生活了很多年，成了神里家的得力管家~"},
+  {q:"以下关于「元素力本质」的说法，哪个最接近游戏设定？",o:["元素力来自天空岛/天理的授权","元素力是自然存在的","元素力来自深渊","元素力由七神创造"],a:0,p:"根据游戏暗示，元素力可能来自<em>天空岛/天理的授权</em>体系！神之眼本质上是被天理认可的凭证。这也解释了为什么坎瑞亚（不被神眷顾的国家）要发展独立于元素力的技术~"},
+  {q:"「黑暗」在凯亚的角色故事中暗示了什么？",o:["凯亚可能是坎瑞亚的后裔/间谍","凯亚喜欢黑色","凯亚害怕黑暗","没有特别含义"],a:0,p:"凯亚的角色故事暗示他可能是<em>坎瑞亚的后裔</em>！他被安插到了蒙德的迪卢克家族中。这也是凯亚和迪卢克关系变差的重要原因之一..."},
+  {q:"「世界树」在须弥的功能是什么？",o:["记录世界的所有记忆","产生水果","装饰须弥","制造武器"],a:0,p:"须弥的世界树负责<em>记录整个世界的所有记忆</em>！如果世界树出问题，人们的记忆也会消失。在须弥魔神任务中，散兵曾从世界树上抹除了自己的存在..."},
+  {q:"「侍奉冰之女皇是我们一切行动的目的」——这句话出自谁之口？",o:["愚人众执行官（集体信条）","温迪","钟离","纳西妲"],a:0,p:"这是<em>愚人众执行官们的共同信条</em>！他们都效忠于至冬国的冰之女皇。但每位执行官对这份忠诚的理解和执行方式都不一样~"},
+  {q:"「三眼五显仙人」指的是什么形态的仙人？",o:["一种特定的仙人称号/等级","三只眼睛的仙人","会隐身的仙人","水中仙人"],a:0,p:"「三眼五显仙人」是<em>对特定仙人的称号</em>！在璃月的仙人体系中有着复杂的等级划分。不同称号代表着不同的修行境界和能力~"},
+  {q:"以下哪位角色的英文版配音出了名的感情充沛？",o:["温迪（Venti）- Erika Harlacher","派蒙","班尼特","迪卢克"],a:0,p:"很多角色的英配都很出色！<em>温迪的英配</em>Erika Harlacher尤其感情充沛，特别是在提到过去好友的场景中。其实每个语言版本的配音都有自己的特色~"},
+  {q:"「第一口甘露」在枫丹世界观中代表什么？",o:["枫丹人类起源的象征","一种饮料","一件武器","一首歌"],a:0,p:"「第一口甘露」象征着<em>枫丹人类的起源</em>！与水神最初创造枫丹人有关。枫丹人本质上与其他国度的人类不同，他们来自原始之水...这个设定太震撼了！"},
+  {q:"以下哪个地点曾是「赤王」文明的中心？",o:["须弥沙漠（阿如村附近）","蒙德风龙废墟","璃月层岩巨渊","稻妻渊下宫"],a:0,p:"赤王的文明中心在<em>须弥沙漠</em>！那里曾经有着辉煌的金字塔和宫殿，但因为禁忌知识的侵蚀而化为沙漠。现在只剩下废墟了..."},
+  {q:"以下哪部角色演示PV被玩家认为暗藏最多伏笔？",o:["「神女劈观」—— 云堇/钟离","「白皙之歌」","「焰色的轮舞」","「决意的灼风」"],a:0,p:"<em>「神女劈观」</em>被认为暗藏大量伏笔！这段戏曲讲述了「岩之魔神」的故事，其中很多细节与钟离和璃月的深层历史相呼应~"},
+  {q:"纳西妲的「摩耶之殿」指的是什么？",o:["梦境世界/意识空间","她的宫殿","一个秘境","一件武器"],a:0,p:"摩耶之殿是纳西妲创造的<em>梦境世界</em>！她可以在梦中与人交流。须弥主线中那个不断循环的梦境就是摩耶之殿的体现~"},
+  {q:"「漫巡者」在枫丹水下世界观中扮演什么角色？",o:["水下探索相关的巡逻力量","一种鱼类","一种矿石","一个商店"],a:0,p:"漫巡者与枫丹<em>水下世界的巡逻和秩序</em>有关！枫丹有着非常独特的水下文明和探索系统~"},
+  {q:"以下哪个角色故事揭示了「蒙德的暗面」？",o:["迪卢克的角色故事","可莉的角色故事","芭芭拉的角色故事","安柏的角色故事"],a:0,p:"<em>迪卢克的角色故事</em>揭示了蒙德背后的阴暗面！他的父亲之死、骑士团的无能、暗中保护蒙德的黑暗火焰...让我们看到了自由之城不为人知的一面~"},
+  {q:"关于神之眼的「无主的神之眼会变灰」这个设定暗示了什么？",o:["神之眼与持有者的意志/愿望绑定","神之眼需要充电","纯粹是装饰变化","与天气有关"],a:0,p:"无主的神之眼变灰暗示着<em>神之眼与持有者的意志和愿望深度绑定</em>！当持有者失去信念或死亡，神之眼就会失去光辉。稻妻眼狩令收集到的神之眼都是灰色的..."},
+  {q:"「星辉」和「星尘」在祈愿系统的世界观解释是什么？",o:["许愿时散落的星光碎片","货币","经验值","食物"],a:0,p:"星辉和星尘被解释为<em>许愿时散落的星光碎片</em>！虽然这更多是游戏机制的包装，但原神确实为很多系统都做了世界观层面的解释~"},
+  {q:"以下哪个活动揭示了「前风神」德卡拉比安的详细故事？",o:["风花节相关活动/蒙德历史文本","海灯节","稻妻祭典","须弥学术会"],a:0,p:"关于前风神德卡拉比安的故事主要在<em>蒙德的历史文本和风花节</em>相关内容中揭示！他建造了高塔和暴风围墙把蒙德人困在里面，是一个暴君式的风神~"},
+  {q:"「无想的一刀」在世界观中有什么特殊意义？",o:["雷电将军斩断一切的终极之刀","一种料理","一本书","一种音乐"],a:0,p:"「无想的一刀」是雷电将军的<em>终极斩击</em>！代表着将一切归于虚无的力量。她曾用这一刀劈开了整个鸣神大陆，创造了现在的海峡地形！"},
+  {q:"以下关于「荒泷一斗」的冷知识，哪个是正确的？",o:["他是鬼族后裔","他是纯人类","他是仙人","他是愚人众"],a:0,p:"一斗是<em>鬼族后裔</em>！所以他有角。他是赤鬼一族仅存的后代之一，虽然看起来大大咧咧的，但鬼族在稻妻受到的歧视其实让他很受伤..."},
+  {q:"「纯水精灵」与哪位角色有最直接的关联？",o:["罗德利亚（NPC）/纯水之心","芭芭拉","莫娜","行秋"],a:0,p:"纯水精灵与蒙德的<em>纯水之心</em>boss以及NPC罗德利亚有关！纯水精灵是水元素凝聚成的生命体，在蒙德湖泊附近能遇到~"},
+  {q:"以下哪个设定暗示了「原神宇宙」可能与崩坏系列有联系？",o:["「想象之树」和「虚数之树」的概念相似性","角色外观相同","完全无关","仅仅是彩蛋"],a:0,p:"<em>「想象之树」和「虚数之树」</em>的概念有着深层次的相似性！米哈游的多部作品可能共享一个更大的宇宙观。但这方面的联系非常隐晦，还需要更多信息来验证~"},
+  {q:"「千年千岩」说的是璃月什么传统？",o:["千岩军世代守护璃月的传统","烹饪传统","节日传统","贸易传统"],a:0,p:"「千年千岩」描述的是<em>千岩军世代守护璃月</em>的传统！千岩军是璃月最重要的军事力量，他们世代效忠于岩王帝君和璃月七星~"},
+  {q:"以下哪个角色与「镇守之森」有关？",o:["提纳里","柯莱","赛诺","多莉"],a:0,p:"<em>提纳里</em>作为巡林官负责守护须弥雨林中的「道成林」等区域！他对森林里的每一种植物都了如指掌，是最可靠的雨林守护者~"},
+],
+};
+
+// ==================== 答题系统 ====================
+let currentDiff='easy', currentQuestions=[], currentIndex=0, score=0, correctCount=0, answered=false;
+
+function shuffleArray(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
+  return a;
+}
+
+function startQuiz(diff){
+  currentDiff=diff;
+  const pool=QUESTIONS[diff];
+  currentQuestions=shuffleArray(pool).slice(0,20);
+  currentIndex=0;score=0;correctCount=0;
+  const names={easy:'萌新旅行者',medium:'老练冒险家',hard:'提瓦特学者'};
+  document.getElementById('diffBadge').textContent=names[diff];
+  document.getElementById('qTotal').textContent='20';
+  switchPage('quizPage');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  answered=false;
+  const q=currentQuestions[currentIndex];
+  document.getElementById('qCurrent').textContent=currentIndex+1;
+  document.getElementById('progressFill').style.width=((currentIndex)/20*100)+'%';
+  const letters=['A','B','C','D'];
+  // Shuffle options but track correct answer
+  let opts=q.o.map((text,i)=>({text,isCorrect:i===q.a}));
+  opts=shuffleArray(opts);
+  let html=`<div class="question-card"><div class="question-number">QUESTION ${currentIndex+1}</div><div class="question-text">${q.q}</div><div class="options">`;
+  opts.forEach((o,i)=>{
+    html+=`<button class="option-btn" data-correct="${o.isCorrect}" onclick="selectOption(this)"><span class="opt-letter">${letters[i]}</span><span>${o.text}</span></button>`;
+  });
+  html+=`</div></div><div id="feedbackArea"></div>`;
+  document.getElementById('questionArea').innerHTML=html;
+}
+
+function selectOption(btn){
+  if(answered) return;
+  answered=true;
+  const isCorrect=btn.dataset.correct==='true';
+  const allBtns=document.querySelectorAll('.option-btn');
+  allBtns.forEach(b=>{
+    b.classList.add('disabled');
+    if(b.dataset.correct==='true') b.classList.add(b===btn?'correct':'show-correct');
+  });
+  if(isCorrect){btn.classList.add('correct');score+=5;correctCount++}
+  else{btn.classList.add('wrong')}
+
+  // Paimon feedback
+  const q=currentQuestions[currentIndex];
+  let feedHtml=`<div class="paimon-box"><div class="paimon-header"><div class="paimon-avatar">✦</div><div class="paimon-name">派蒙的解析</div></div><div class="paimon-text">`;
+  if(isCorrect){feedHtml+=`哇！答对了！旅行者好厉害~ `}
+  else{feedHtml+=`呜呜，答错了...没关系啦！`}
+  feedHtml+=q.p+`</div></div>`;
+  feedHtml+=`<button class="next-btn" onclick="nextQuestion()">${currentIndex<19?'下一题 →':'查看结果 ★'}</button>`;
+  document.getElementById('feedbackArea').innerHTML=feedHtml;
+  // scroll to feedback
+  setTimeout(()=>{document.querySelector('.paimon-box').scrollIntoView({behavior:'smooth',block:'center'})},100);
+}
+
+function nextQuestion(){
+  currentIndex++;
+  if(currentIndex>=20){showResult();return}
+  renderQuestion();
+  document.querySelector('.quiz-container').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function showResult(){
+  switchPage('resultPage');
+  const pct=score; // 0-100
+  const wrongCount=20-correctCount;
+  document.getElementById('statCorrect').textContent=correctCount;
+  document.getElementById('statTotal').textContent='20';
+  document.getElementById('statWrong').textContent=wrongCount;
+
+  // Animate score
+  let curr=0;
+  const interval=setInterval(()=>{
+    curr+=1;if(curr>pct)curr=pct;
+    document.getElementById('scoreNum').innerHTML=curr+'<small> 分</small>';
+    if(curr>=pct)clearInterval(interval);
+  },20);
+
+  // Ring animation
+  const circumference=553;
+  const offset=circumference-circumference*(pct/100);
+  setTimeout(()=>{document.getElementById('scoreRing').style.strokeDashoffset=offset},200);
+
+  // Title
+  let title,desc,paimonComment;
+  if(pct===100){
+    title='✦ 全知全能の旅行者 ✦';desc='满分通关！你就是提瓦特的活百科全书！';
+    paimonComment='天哪天哪天哪！！全！部！答！对！旅行者你是不是偷偷看了天理的档案库啊？！派蒙觉得你比七神知道的都多！太太太厉害了！！✨';
+  }else if(pct>=80){
+    title='⭐ 七神认证·博学旅人 ⭐';desc='你对提瓦特的了解令七神都为之侧目！';
+    paimonComment='哇哦~旅行者你真的好厉害啊！这个分数连教令院的学者都要服气了吧~不过还差一点点就满分了，下次一定可以的！派蒙相信你！';
+  }else if(pct>=60){
+    title='合格的冒险家';desc='你已经是一位经验丰富的旅行者了！';
+    paimonComment='嗯嗯，这个成绩已经很不错了！看得出来旅行者平时有认真听NPC说话嘛~继续加油，争取下次拿更高分！';
+  }else if(pct>=30){
+    title='成长中的旅行者';desc='继续探索，提瓦特还有很多秘密等着你！';
+    paimonComment='唔...旅行者好像有些知识还不太了解呢~没关系没关系！提瓦特这么大，慢慢探索就好了。派蒙会一直陪着你的！';
+  }else{
+    title='刚到提瓦特的萌新';desc='欢迎来到提瓦特！冒险才刚刚开始~';
+    paimonComment='旅行者...你是不是刚从海里把派蒙钓上来就跑来答题了？😂 没关系啦，现在开始好好探索，下次一定能考好的！先去做做主线任务吧~';
+  }
+
+  document.getElementById('resultTitle').textContent=title;
+  document.getElementById('resultDesc').textContent=desc;
+  document.getElementById('resultPaimon').innerHTML=`<div class="paimon-box"><div class="paimon-header"><div class="paimon-avatar">✦</div><div class="paimon-name">派蒙的评价</div></div><div class="paimon-text">${paimonComment}</div></div>`;
+}
+
+function restartQuiz(){startQuiz(currentDiff)}
+function goHome(){switchPage('homePage')}
+
+function switchPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
